@@ -1,6 +1,8 @@
-from fastapi import FastAPI, Response
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
+
+from app.monitoring import HTTP_REQUESTS
 
 from app.controllers import (
     dashboard_controller,
@@ -32,6 +34,20 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def compter_requetes(request: Request, call_next):
+    """Compte chaque requête HTTP pour Prometheus (méthode, route, statut)."""
+    response = await call_next(request)
+    route = request.scope.get("route")
+    endpoint = getattr(route, "path", request.url.path)
+    HTTP_REQUESTS.labels(
+        method=request.method,
+        endpoint=endpoint,
+        status=response.status_code,
+    ).inc()
+    return response
+
 
 app.include_router(rfid_controller.router)
 app.include_router(iot_controller.router)

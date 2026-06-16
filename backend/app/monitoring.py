@@ -9,10 +9,17 @@ logging.basicConfig(
 logger = logging.getLogger("smartcampus_backend")
 
 # Prometheus Custom Metrics
+# Requêtes HTTP traitées par le backend (alimente Prometheus pour chaque action).
+HTTP_REQUESTS = Counter(
+    "smartcampus_http_requests_total",
+    "Nombre de requêtes HTTP traitées par le backend",
+    ["method", "endpoint", "status"]
+)
+
 BADGE_SCANS = Counter(
     "smartcampus_badge_scans_total",
     "Total number of RFID badge scans",
-    ["status", "room_id", "esp_ip"]
+    ["status", "room_id", "mac"]
 )
 
 IOT_MESSAGES = Counter(

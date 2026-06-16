@@ -61,7 +61,7 @@ def process_scan(db: Session, mac_address: str, rfid_uid: str, ip: str = "unknow
         BADGE_SCANS.labels(
             status="success" if granted else "denied",
             room_id=room_id,
-            esp_ip=mac_address,
+            mac=mac_address,
         ).inc()
         logger.info(f"Scan UID={rfid_uid} via {mac_address} -> {event_type} ({granted})")
 
