@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary
+pydantic
+pydantic-settings
+pytest
+httpx
+websockets
+prometheus-client
+scikit-learn
+pandas
+numpy
+joblib
