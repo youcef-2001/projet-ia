@@ -207,3 +207,51 @@ projet-ia/
 ├── prometheus/prometheus.yml
 └── grafana/provisioning/       # datasources + dashboards
 ```
+
+## 8. Téléverser le firmware ESP32 (Arduino IDE)
+
+Le firmware du lecteur se trouve dans [get_and_send_uuid/get_and_send_uuid.ino](get_and_send_uuid/get_and_send_uuid.ino). Il tourne sur un **ESP32 (NodeMCU-32S)** relié à un **RFID RC522** en SPI.
+
+### 8.1 Câblage RC522 → ESP32 (SPI)
+
+| RC522 | ESP32 (GPIO) |
+|-------|--------------|
+| SDA / SS | 5 |
+| SCK      | 18 |
+| MOSI     | 23 |
+| MISO     | 19 |
+| RST      | (non utilisé par le driver, laisser libre ou 22) |
+| 3.3V     | 3V3 (**jamais 5V**) |
+| GND      | GND |
+
+Le pin SS est fixé à `5` dans le code (`MFRC522DriverPinSimple ss_pin(5)`). Les broches SCK/MOSI/MISO sont celles du bus VSPI par défaut de l'ESP32.
+
+### 8.2 Prérequis Arduino IDE
+
+1. **Board manager** : ajouter l'URL ESP32 dans *Fichier → Préférences → URLs de gestionnaire de cartes* :
+   `https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json`
+   puis installer **esp32 by Espressif Systems** via *Outils → Type de carte → Gestionnaire de cartes*.
+2. **Bibliothèques** (*Croquis → Inclure une bibliothèque → Gérer les bibliothèques*) :
+   - `MFRC522v2` (Rfid RC522, API v2)
+   - `WiFiManager` (tzapu)
+   - `WebSockets` (Markus Sattler — fournit `WebSocketsClient`)
+   - `WiFi` et `Preferences` sont inclus dans le core ESP32.
+
+### 8.3 Téléversement
+
+1. Ouvrir `get_and_send_uuid/get_and_send_uuid.ino`.
+2. *Outils → Type de carte* → **NodeMCU-32S** (ou « ESP32 Dev Module »).
+3. *Outils → Port* → sélectionner le port série de l'ESP32 (ex. `/dev/ttyUSB0`, `COMx`). Vitesse moniteur : **115200**.
+4. Cliquer sur **Téléverser** (→). Maintenir le bouton **BOOT** si le flash ne démarre pas.
+5. Ouvrir le **Moniteur série** (115200 baud) pour suivre les logs.
+
+### 8.4 Configuration réseau au premier démarrage
+
+Aucune modification du code n'est nécessaire : la config Wi-Fi et l'IP du serveur passent par le **portail captif** (WiFiManager).
+
+1. Au premier boot, l'ESP32 crée un point d'accès **`ESP32_RFID_AP`**.
+2. S'y connecter depuis un téléphone/PC, le portail s'ouvre automatiquement.
+3. Choisir le réseau Wi-Fi, saisir le mot de passe, et renseigner le champ **« IP du Serveur Master »** avec l'IP de la machine qui héberge le backend FastAPI (port `8000`, chemin WebSocket `/ws/esp`).
+4. Valider : l'IP est sauvegardée en mémoire flash et réutilisée aux redémarrages suivants.
+
+Une fois connecté, l'ESP32 s'enregistre auprès du backend via son adresse MAC, puis envoie chaque UID de badge scanné au format JSON sur le WebSocket.
